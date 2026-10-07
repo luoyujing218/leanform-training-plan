@@ -7,10 +7,13 @@ function renderHealth() {
     return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
   };
   const avgSleep = mean('sleep'), avgSteps = mean('steps');
+  const avgWater = mean('water');
   const pulse = [...all].reverse().find(x => x.pulse != null);
   const waist = [...all].reverse().find(x => x.waist != null);
   $('#hAvgSleep').textContent = avgSleep == null ? '—' : avgSleep.toFixed(1);
   $('#hAvgSteps').textContent = avgSteps == null ? '—' : Math.round(avgSteps).toLocaleString();
+  const waterMetric = $('#hAvgWater');
+  if (waterMetric) waterMetric.textContent = avgWater == null ? '—' : avgWater.toFixed(1);
   $('#hLastPulse').textContent = pulse ? pulse.pulse : '—';
   $('#hLastWaist').textContent = waist ? Number(waist.waist).toFixed(1) : '—';
 
@@ -20,7 +23,7 @@ function renderHealth() {
   $('#healthTable').hidden = all.length === 0;
   all.slice(-30).reverse().forEach(x => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${x.date}</td><td>${x.sleep ?? '—'}</td><td>${x.pulse ?? '—'}</td><td>${x.sys && x.dia ? `${x.sys}/${x.dia}` : '—'}</td><td>${x.waist ?? '—'}</td><td>${x.steps ? Number(x.steps).toLocaleString() : '—'}</td><td>${x.temp ?? '—'}</td><td>${x.spo2 ?? '—'}</td><td>${x.glucose ?? '—'}</td><td>${x.water ?? '—'}</td><td>${x.stress ?? '—'} / ${x.energy ?? '—'} / ${x.soreness ?? '—'}</td><td><button class="linkbtn" data-hdel="${x.date}">删除</button></td>`;
+    tr.innerHTML = `<td>${x.date}</td><td>${x.sleep ?? '—'}</td><td>${x.pulse ?? '—'}</td><td>${x.sys && x.dia ? `${x.sys}/${x.dia}` : '—'}</td><td>${x.waist ?? '—'}</td><td>${x.steps ? Number(x.steps).toLocaleString() : '—'}</td><td>${x.temp ?? '—'}</td><td>${x.spo2 ?? '—'}</td><td>${x.glucose ?? '—'}</td><td>${x.water ?? '—'} / ${x.waterDay ?? '—'} / ${x.waterWorkout ?? '—'}</td><td>${x.stress ?? '—'} / ${x.energy ?? '—'} / ${x.soreness ?? '—'}</td><td><button class="linkbtn" data-hdel="${x.date}">删除</button></td>`;
     tbody.appendChild(tr);
   });
   tbody.querySelectorAll('[data-hdel]').forEach(btn => btn.onclick = () => {
@@ -44,7 +47,7 @@ $('#healthForm').onsubmit = e => {
   const num = id => $('#'+id).value === '' ? null : Number($('#'+id).value);
   const entry = {
     date: $('#hDate').value, sleep: num('hSleep'), pulse: num('hPulse'), sys: num('hSys'), dia: num('hDia'),
-    waist: num('hWaist'), steps: num('hSteps'), water: num('hWater'), temp: num('hTemp'),
+    waist: num('hWaist'), steps: num('hSteps'), water: num('hWater'), waterDay: num('hWaterDay'), waterWorkout: num('hWaterWorkout'), temp: num('hTemp'),
     spo2: num('hSpo2'), glucose: num('hGlucose'), protein: num('hProtein'), calories: num('hCalories'),
     stress: num('hStress'), energy: num('hEnergy'), soreness: num('hSoreness'), workout: $('#hWorkout').value,
     notes: $('#hNotes').value.slice(0, 300)
@@ -55,7 +58,7 @@ $('#healthForm').onsubmit = e => {
 };
 
 // Apple Health export.xml can be selected after extracting export.zip.
-// Generic CSV headers: date,sleep,pulse,sys,dia,weight,steps,waist,water.
+// Generic CSV headers: date,sleep,pulse,sys,dia,weight,steps,waist,water,water_day,water_workout.
 async function importHealthFile(file) {
   const status = $('#importStatus');
   if (!file) return;
@@ -98,7 +101,7 @@ async function importHealthFile(file) {
       const date = String(row.date || row.startDate || row.day || '').slice(0, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
       const entry = healthLogs.find(x => x.date === date) || { date };
-      const fields = { sleep:['sleep','sleephours'], pulse:['pulse','heart_rate','heartrate'], sys:['sys','systolic'], dia:['dia','diastolic'], waist:['waist','waist_cm'], steps:['steps','step_count'], water:['water','water_liters'], temp:['temp','temperature'], spo2:['spo2','oxygen_saturation'], glucose:['glucose','blood_glucose'], protein:['protein','protein_g'], calories:['calories','energy_kcal'], stress:['stress'], energy:['energy'], soreness:['soreness'] };
+      const fields = { sleep:['sleep','sleephours'], pulse:['pulse','heart_rate','heartrate'], sys:['sys','systolic'], dia:['dia','diastolic'], waist:['waist','waist_cm'], steps:['steps','step_count'], water:['water','water_liters'], waterDay:['water_day','waterday'], waterWorkout:['water_workout','waterworkout'], temp:['temp','temperature'], spo2:['spo2','oxygen_saturation'], glucose:['glucose','blood_glucose'], protein:['protein','protein_g'], calories:['calories','energy_kcal'], stress:['stress'], energy:['energy'], soreness:['soreness'] };
       Object.entries(fields).forEach(([key, aliases]) => { const k = aliases.find(a => row[a] !== undefined && row[a] !== '' && Number.isFinite(Number(row[a]))); if (k) entry[key] = Number(row[k]); });
       const wk = ['weight','body_mass'].find(k => row[k] !== undefined && Number.isFinite(Number(row[k])));
       if (wk) { entry.weight = Number(row[wk]); weights = weights.filter(x => x.date !== date); weights.push({ date, kg: entry.weight }); }
