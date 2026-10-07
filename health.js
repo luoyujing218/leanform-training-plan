@@ -3,7 +3,7 @@ function renderHealth() {
   const all = [...healthLogs].sort((a, b) => a.date.localeCompare(b.date));
   const recent = all.slice(-7);
   const mean = key => {
-    const values = recent.map(x => Number(x[key])).filter(Number.isFinite);
+    const values = recent.map(x => x[key] == null || x[key] === '' ? null : Number(x[key])).filter(Number.isFinite);
     return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
   };
   const avgSleep = mean('sleep'), avgSteps = mean('steps');
